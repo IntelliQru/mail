@@ -72,8 +72,15 @@ func (m *Message) Attach(file string, inline bool) error {
 
 func (m *Message) SendMail() error {
 
+	var from string
+	if len(m.smtpClient.From) == 0 || m.smtpClient.User == m.smtpClient.From {
+		from = m.smtpClient.User // "my@ya.ru"
+	} else {
+		from = fmt.Sprintf("%s <%s>", m.smtpClient.From, m.smtpClient.User) // "Alias <my@ya.ru>"
+	}
+
 	buf := bytes.NewBuffer(nil)
-	buf.WriteString("From: " + m.smtpClient.From + "\r\n")
+	buf.WriteString("From: " + from + "\r\n")
 	buf.WriteString("To: " + m.To + "\r\n")
 	buf.WriteString("MIME-Version: 1.0\r\n")
 	buf.WriteString("Date: " + time.Now().Format(time.RFC822) + "\r\n")
@@ -89,7 +96,7 @@ func (m *Message) SendMail() error {
 	}
 
 	/* Генерация тела сообщения */
-	boundary := "f46d043c813270fc6b04c2d223da"
+	const boundary = "f46d043c813270fc6b04c2d223da"
 
 	if len(m.Attachments) > 0 {
 		buf.WriteString("Content-Type: multipart/mixed; boundary=" + boundary + "\r\n\r\n")
@@ -169,7 +176,7 @@ func (m *Message) SendMail() error {
 	}
 
 	// To && From
-	if err = c.Mail(m.smtpClient.From); err != nil {
+	if err = c.Mail(m.smtpClient.User); err != nil {
 		return err
 	}
 
